@@ -4,7 +4,13 @@ import { Promise } from 'mongoose';
 
 export class PortOneAdapter implements PaymentOutputPort {
   async processPayment(payment: PaymentModel): Promise<boolean> {
-    //PortOne(PG사) 기능 구현부
+    //PortOne(PG사) 결제 기능 구현부
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    return true;
+  }
+
+  async cancelPayment(orderId: string): Promise<boolean> {
+    //PortOne(PG사) 결제 취소 기능 구현부
     await new Promise((resolve) => setTimeout(resolve, 1000));
     return true;
   }

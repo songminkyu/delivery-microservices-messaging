@@ -15,7 +15,18 @@ async function bootstrap() {
       package: OrderMicroservice.protobufPackage,
       protoPath: join(process.cwd(), 'proto/order.proto'),
       url: configService.getOrThrow('GRPC_URL'),
-    }
+    },
+  });
+
+  app.connectMicroservice({
+    transport: Transport.KAFKA,
+    client: {
+      clientId: 'order',
+      brokers: ['kafka:9092'],
+    },
+    consumer: {
+      groupId: 'order-consumer',
+    },
   });
 
   await app.init();

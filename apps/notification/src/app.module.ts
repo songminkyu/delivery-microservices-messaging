@@ -45,6 +45,22 @@ import { join } from 'path';
           }),
           inject: [ConfigService],
         },
+        {
+          /// 이벤트를 보내는 용도 설정
+          name: 'KAFKA_SERVICE',
+          useFactory: () => ({
+            transport: Transport.KAFKA,
+            options: {
+              client: {
+                clientId: 'notification',
+                brokers: ['kafka:9092'],
+              },
+              consumer: {
+                groupId: 'notification-consumer',
+              },
+            },
+          }),
+        },
       ],
       isGlobal: true,
     }),
