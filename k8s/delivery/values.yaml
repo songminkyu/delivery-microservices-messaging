@@ -1,0 +1,22 @@
+gateway:
+  replicas: 1
+
+notification:
+  replicas: 1
+  db_url: "실제 몽고디비 URL"
+
+order:
+  replicas: 1
+  db_url: "실제 몽고디비 URL"
+
+payment:
+  replicas: 1
+  db_url: "실제 postgresql URL"
+
+product:
+  replicas: 1
+  db_url: "실제 postgresql URL"
+
+user:
+  replicas: 1
+  db_url: "실제 postgresql URL"

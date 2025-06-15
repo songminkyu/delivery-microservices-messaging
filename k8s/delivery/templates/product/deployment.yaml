@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Chart.Name }}-product-deployment
+  labels:
+    app: product
+spec:
+  replicas: {{ .Values.product.replicas }}
+  selector:
+    matchLabels:
+      app: product
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: product
+    spec:
+      containers:
+        - image: songminkyu/fc-nestjs-product:latest
+          name: product-container
+          envFrom:
+            - configMapRef:
+                name: product-config-map
+            - secretRef:
+                name: product-secret
+          ports:
+            - containerPort: 3001
+          livenessProbe:
+            tcpSocket:
+              port: 3001
+            periodSeconds: 5
+          readinessProbe:
+            tcpSocket:
+              port: 3001
+            periodSeconds: 5

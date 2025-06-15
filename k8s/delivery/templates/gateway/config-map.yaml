@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gateway-config-map
+data:
+  HTTP_PORT: "3000"
+  USER_HOST: "user"
+  USER_TCP_PORT: "3001"
+  USER_GRPC_URL: "{{ .Chart.Name }}-user-cluster-ip:3001"
+  PRODUCT_HOST: "product"
+  PRODUCT_TCP_PORT: "3001"
+  PRODUCT_GRPC_URL: "{{ .Chart.Name }}-user-product-ip:3001"
+  ORDER_HOST: "order"
+  ORDER_TCP_PORT: "3001"
+  ORDER_GRPC_URL: "{{ .Chart.Name }}-order-cluster-ip:3001"

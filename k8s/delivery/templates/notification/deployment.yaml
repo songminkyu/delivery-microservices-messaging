@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Chart.Name }}-notification-deployment
+  labels:
+    app: notification
+spec:
+  replicas: {{ .Values.notification.replicas }}
+  selector:
+    matchLabels:
+      app: notification
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: notification
+    spec:
+      containers:
+        - image: songminkyu/fc-nestjs-notification:latest
+          name: notification-container
+          envFrom:
+            - configMapRef:
+                name: notification-config-map
+            - secretRef:
+                name: notification-secret
+          ports:
+            - containerPort: 3001
+          livenessProbe:
+            tcpSocket:
+              port: 3001
+            periodSeconds: 5
+          readinessProbe:
+            tcpSocket:
+              port: 3001
+            periodSeconds: 5
