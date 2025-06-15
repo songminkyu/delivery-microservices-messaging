@@ -1,4 +1,4 @@
-# Delivery Microservices Application
+# 1. **Message-Based Delivery Microservices Application**
 
 <p align="center">
   <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
@@ -16,19 +16,19 @@
 2. **User 서비스**: 사용자 관리 및 인증을 담당합니다. 사용자 등록, 로그인, 프로필 관리 기능을 제공합니다. PostgreSQL 데이터베이스를 사용합니다.
 3. **Product 서비스**: 상품 정보 관리를 담당합니다. 상품 목록 조회, 상세 정보 조회 기능을 제공합니다. PostgreSQL 데이터베이스를 사용합니다.
 4. **Order 서비스**: 주문 처리를 담당합니다. 주문 생성, 주문 상태 관리, 배송 정보 관리 기능을 제공합니다. MongoDB 데이터베이스를 사용합니다.
-5. **Payment-Command 서비스**: 결제 처리를 담당합니다. 결제 처리, 결제 상태 관리 기능을 제공합니다. PostgreSQL 데이터베이스를 사용합니다.
-6. **Payment-Query 서비스**: 결제 정보 조회를 담당합니다. 결제 내역 조회 기능을 제공합니다. PostgreSQL 데이터베이스를 사용합니다.
+5. **Payment-Command 서비스**: 결제 처리를 담당합니다. 결제 처리, 결제 상태 관리 기능을 제공합니다. PostgreSQL 데이터베이스를 사용하며, MongoDB도 함께 사용합니다.
+6. **Payment-Query 서비스**: 결제 정보 조회를 담당합니다. 결제 내역 조회 기능을 제공합니다. 개발 환경에서는 MongoDB를 사용하고, 프로덕션 환경에서는 PostgreSQL을 사용할 수 있도록 구성되어 있습니다.
 7. **Notification 서비스**: 알림 처리를 담당합니다. 주문 상태 변경, 결제 완료 등의 이벤트에 대한 알림을 처리합니다. MongoDB 데이터베이스를 사용합니다.
 
 ### 서비스 간 통신
 
 - **동기식 통신**: 서비스 간 직접 통신은 gRPC 프로토콜을 사용하여 이루어집니다. 각 서비스는 proto 파일에 정의된 인터페이스를 통해 통신합니다.
-- **비동기식 통신**: 이벤트 기반 통신은 RabbitMQ를 통한 AMQP 프로토콜을 사용합니다. 이를 통해 서비스 간 느슨한 결합을 유지합니다.
+- **비동기식 통신**: 이벤트 기반 통신은 Kafka를 통해 이루어집니다. 이를 통해 서비스 간 느슨한 결합을 유지합니다.
 
 ### 데이터 저장소
 
-- **PostgreSQL**: User, Product, Payment 서비스에서 사용되며, 관계형 데이터를 저장합니다.
-- **MongoDB**: Order, Notification 서비스에서 사용되며, 문서 기반 데이터를 저장합니다.
+- **PostgreSQL**: User, Product, Payment-Command 서비스에서 사용되며, 관계형 데이터를 저장합니다.
+- **MongoDB**: Order, Notification, Payment-Query 서비스에서 사용되며, 문서 기반 데이터를 저장합니다. Payment-Command 서비스에서도 일부 데이터를 저장합니다.
 - **Redis**: 캐싱 및 세션 관리에 사용됩니다.
 
 ## 기술 스택
@@ -41,7 +41,7 @@
   - MongoDB v8: 문서 기반 데이터 저장
 - **서비스 간 통신**:
   - gRPC: 동기식 서비스 간 통신
-  - RabbitMQ (AMQP): 비동기식 이벤트 기반 통신
+  - Kafka v3.8.0: 비동기식 이벤트 기반 통신
 - **캐싱**: Redis
 - **컨테이너화 및 오케스트레이션**:
   - Docker, Docker Compose: 로컬 개발 및 테스트
@@ -103,6 +103,14 @@ $ pnpm run start:prod
 
 ### Docker Compose 사용
 
+프로젝트에는 세 가지 Docker Compose 설정 파일이 있습니다:
+
+1. **docker-compose.yml**: 개발 환경을 위한 기본 설정 파일로, 소스 코드에서 직접 빌드합니다.
+2. **docker-compose.image-test.yml**: 미리 빌드된 Docker 이미지를 테스트하기 위한 설정 파일입니다.
+3. **docker-compose.prod.yml**: 프로덕션 환경을 위한 간소화된 설정 파일로, 외부 데이터베이스를 사용합니다.
+
+#### 개발 환경
+
 모든 서비스와 데이터베이스를 한 번에 실행:
 
 ```bash
@@ -121,6 +129,22 @@ $ docker-compose up gateway user
 $ docker-compose up -d
 ```
 
+#### 이미지 테스트
+
+미리 빌드된 Docker 이미지를 테스트:
+
+```bash
+$ docker-compose -f docker-compose.image-test.yml up
+```
+
+#### 프로덕션 환경
+
+프로덕션 환경에서 실행:
+
+```bash
+$ docker-compose -f docker-compose.prod.yml up -d
+```
+
 ### 서비스 접근
 
 - Gateway API: http://localhost:3000
@@ -129,9 +153,13 @@ $ docker-compose up -d
   - PostgreSQL (User): 6001
   - PostgreSQL (Product): 6002
   - MongoDB (Order): 6003
-  - PostgreSQL (Payment-Command): 6004
-  - PostgreSQL (Payment-Query): 6005
+  - PostgreSQL (Payment-Command): 6005
+  - MongoDB (Payment-Command): 6010
+  - MongoDB (Payment-Query): 6011
   - MongoDB (Notification): 6006
+- Kafka:
+  - 내부 통신 포트: 9092
+  - 외부 접근 포트: 29092
 
 ## 테스트
 
@@ -163,6 +191,7 @@ API 문서는 Postman 컬렉션으로 제공됩니다. `docs/NestJS Microservice
 ```
 delivery-microservices-messaging/
 ├── .github/                # GitHub 관련 설정
+├── .idea/                  # IDE 설정 (JetBrains)
 ├── apps/                   # 마이크로서비스 애플리케이션
 │   ├── gateway/            # API 게이트웨이 (포트: 3000)
 │   │   ├── src/            # 소스 코드
@@ -170,31 +199,45 @@ delivery-microservices-messaging/
 │   │   │   ├── health/     # 헬스 체크 관련 코드
 │   │   │   ├── order/      # 주문 관련 코드
 │   │   │   └── product/    # 상품 관련 코드
+│   │   ├── .env            # 개발 환경 변수
+│   │   ├── prod.env        # 프로덕션 환경 변수
 │   │   └── Dockerfile      # Docker 빌드 설정
 │   ├── user/               # 사용자 서비스
 │   │   ├── src/            # 소스 코드
 │   │   │   ├── auth/       # 인증 관련 코드
 │   │   │   └── user/       # 사용자 관련 코드
+│   │   ├── .env            # 개발 환경 변수
+│   │   ├── prod.env        # 프로덕션 환경 변수
 │   │   └── Dockerfile      # Docker 빌드 설정
 │   ├── product/            # 상품 서비스
 │   │   ├── src/            # 소스 코드
 │   │   │   └── product/    # 상품 관련 코드
+│   │   ├── .env            # 개발 환경 변수
+│   │   ├── prod.env        # 프로덕션 환경 변수
 │   │   └── Dockerfile      # Docker 빌드 설정
 │   ├── order/              # 주문 서비스
 │   │   ├── src/            # 소스 코드
 │   │   │   └── order/      # 주문 관련 코드
+│   │   ├── .env            # 개발 환경 변수
+│   │   ├── prod.env        # 프로덕션 환경 변수
 │   │   └── Dockerfile      # Docker 빌드 설정
 │   ├── payment-command/    # 결제 명령 서비스
 │   │   ├── src/            # 소스 코드
 │   │   │   └── payment/    # 결제 관련 코드
+│   │   ├── .env            # 개발 환경 변수
+│   │   ├── prod.env        # 프로덕션 환경 변수
 │   │   └── Dockerfile      # Docker 빌드 설정
 │   ├── payment-query/      # 결제 조회 서비스
 │   │   ├── src/            # 소스 코드
 │   │   │   └── payment/    # 결제 관련 코드
+│   │   ├── .env            # 개발 환경 변수
+│   │   ├── prod.env        # 프로덕션 환경 변수
 │   │   └── Dockerfile      # Docker 빌드 설정
 │   └── notification/       # 알림 서비스
 │       ├── src/            # 소스 코드
 │       │   └── notification/ # 알림 관련 코드
+│       ├── .env            # 개발 환경 변수
+│       ├── prod.env        # 프로덕션 환경 변수
 │       └── Dockerfile      # Docker 빌드 설정
 ├── envs/                   # 환경 변수 설정 파일
 │   ├── gateway/            # 게이트웨이 환경 변수
@@ -222,12 +265,26 @@ delivery-microservices-messaging/
 │       │   ├── grpc/       # gRPC 관련 코드
 │       │   └── interceptor/ # 인터셉터
 │       └── tsconfig.lib.json # TypeScript 설정
+├── node_modules/           # 노드 모듈 (패키지 의존성)
+├── postgres/               # PostgreSQL 데이터 디렉토리
+│   ├── user/               # 사용자 서비스 데이터
+│   ├── product/            # 상품 서비스 데이터
+│   └── payment_command/    # 결제 명령 서비스 데이터
+├── mongo/                  # MongoDB 데이터 디렉토리
+│   ├── order/              # 주문 서비스 데이터
+│   ├── payment_command/    # 결제 명령 서비스 데이터
+│   ├── payment_query/      # 결제 조회 서비스 데이터
+│   └── notification/       # 알림 서비스 데이터
 ├── proto/                  # gRPC 프로토콜 정의
 │   ├── notification.proto  # 알림 서비스 프로토콜
 │   ├── order.proto         # 주문 서비스 프로토콜
 │   ├── payment.proto       # 결제 서비스 프로토콜
 │   ├── product.proto       # 상품 서비스 프로토콜
 │   └── user.proto          # 사용자 서비스 프로토콜
+├── .dockerignore           # Docker 빌드 제외 파일
+├── .eslintrc.js            # ESLint 설정
+├── .gitignore              # Git 제외 파일
+├── .prettierrc             # Prettier 설정
 ├── build-and-push-ps.ps1   # PowerShell 스크립트 (Docker 이미지 빌드 및 푸시)
 ├── build-and-push.sh       # Bash 스크립트 (Docker 이미지 빌드 및 푸시)
 ├── docker-compose.image-test.yml # Docker Compose 이미지 테스트 설정
@@ -236,11 +293,33 @@ delivery-microservices-messaging/
 ├── nest-cli.json           # NestJS CLI 설정
 ├── package.json            # 프로젝트 메타데이터 및 의존성
 ├── pnpm-lock.yaml          # pnpm 락 파일
+├── README.md               # 프로젝트 문서
 ├── run-docker-compose.ps1  # PowerShell 스크립트 (Docker Compose 실행)
 ├── tsconfig.build.json     # TypeScript 빌드 설정
 ├── tsconfig.json           # TypeScript 기본 설정
 └── webpack.config.js       # Webpack 설정
 ```
+
+## 메시징 시스템 (Kafka)
+
+이 프로젝트는 서비스 간 비동기 통신을 위해 Kafka를 사용합니다. Kafka는 높은 처리량, 내구성, 확장성을 제공하는 분산 이벤트 스트리밍 플랫폼입니다.
+
+### Kafka 설정
+
+개발 및 테스트 환경에서는 Docker Compose를 통해 Kafka가 자동으로 설정됩니다:
+
+- Kafka 버전: 3.8.0 (Bitnami 이미지)
+- 내부 통신 포트: 9092
+- 외부 접근 포트: 29092
+- KRaft 모드 활성화 (ZooKeeper 없이 실행)
+
+### 주요 이벤트 흐름
+
+1. 주문 생성 → 결제 처리 → 알림 발송
+2. 결제 완료 → 주문 상태 업데이트 → 알림 발송
+3. 주문 상태 변경 → 알림 발송
+
+각 서비스는 관련 이벤트를 생성하고 소비하여 느슨하게 결합된 마이크로서비스 아키텍처를 구현합니다.
 
 ## 쿠버네티스 배포
 
