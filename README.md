@@ -16,8 +16,9 @@
 2. **User 서비스**: 사용자 관리 및 인증을 담당합니다. 사용자 등록, 로그인, 프로필 관리 기능을 제공합니다. PostgreSQL 데이터베이스를 사용합니다.
 3. **Product 서비스**: 상품 정보 관리를 담당합니다. 상품 목록 조회, 상세 정보 조회 기능을 제공합니다. PostgreSQL 데이터베이스를 사용합니다.
 4. **Order 서비스**: 주문 처리를 담당합니다. 주문 생성, 주문 상태 관리, 배송 정보 관리 기능을 제공합니다. MongoDB 데이터베이스를 사용합니다.
-5. **Payment 서비스**: 결제 처리를 담당합니다. 결제 처리, 결제 상태 관리 기능을 제공합니다. PostgreSQL 데이터베이스를 사용합니다.
-6. **Notification 서비스**: 알림 처리를 담당합니다. 주문 상태 변경, 결제 완료 등의 이벤트에 대한 알림을 처리합니다. MongoDB 데이터베이스를 사용합니다.
+5. **Payment-Command 서비스**: 결제 처리를 담당합니다. 결제 처리, 결제 상태 관리 기능을 제공합니다. PostgreSQL 데이터베이스를 사용합니다.
+6. **Payment-Query 서비스**: 결제 정보 조회를 담당합니다. 결제 내역 조회 기능을 제공합니다. PostgreSQL 데이터베이스를 사용합니다.
+7. **Notification 서비스**: 알림 처리를 담당합니다. 주문 상태 변경, 결제 완료 등의 이벤트에 대한 알림을 처리합니다. MongoDB 데이터베이스를 사용합니다.
 
 ### 서비스 간 통신
 
@@ -72,12 +73,13 @@ $ pnpm install
 ```
 
 3. 각 서비스의 환경 변수 설정:
-   - `apps/gateway/.env`: API 게이트웨이 설정 (JWT 시크릿, 포트 등)
-   - `apps/user/.env`: 사용자 서비스 설정 (데이터베이스 연결 정보 등)
-   - `apps/product/.env`: 상품 서비스 설정 (데이터베이스 연결 정보 등)
-   - `apps/order/.env`: 주문 서비스 설정 (데이터베이스 연결 정보 등)
-   - `apps/payment/.env`: 결제 서비스 설정 (데이터베이스 연결 정보 등)
-   - `apps/notification/.env`: 알림 서비스 설정 (데이터베이스 연결 정보 등)
+   - `envs/gateway/.env`: API 게이트웨이 설정 (JWT 시크릿, 포트 등)
+   - `envs/user/.env`: 사용자 서비스 설정 (데이터베이스 연결 정보 등)
+   - `envs/product/.env`: 상품 서비스 설정 (데이터베이스 연결 정보 등)
+   - `envs/order/.env`: 주문 서비스 설정 (데이터베이스 연결 정보 등)
+   - `envs/payment-command/.env`: 결제 명령 서비스 설정 (데이터베이스 연결 정보 등)
+   - `envs/payment-query/.env`: 결제 조회 서비스 설정 (데이터베이스 연결 정보 등)
+   - `envs/notification/.env`: 알림 서비스 설정 (데이터베이스 연결 정보 등)
 
 각 환경 변수 파일에는 다음과 같은 정보가 포함되어야 합니다:
 - 데이터베이스 연결 정보 (호스트, 포트, 사용자 이름, 비밀번호, 데이터베이스 이름)
@@ -127,7 +129,8 @@ $ docker-compose up -d
   - PostgreSQL (User): 6001
   - PostgreSQL (Product): 6002
   - MongoDB (Order): 6003
-  - PostgreSQL (Payment): 6005
+  - PostgreSQL (Payment-Command): 6004
+  - PostgreSQL (Payment-Query): 6005
   - MongoDB (Notification): 6006
 
 ## 테스트
@@ -151,17 +154,20 @@ API 문서는 Postman 컬렉션으로 제공됩니다. `docs/NestJS Microservice
 - 인증: `/auth/register`, `/auth/login`
 - 상품: `/product`
 - 주문: `/order`
-- 결제: `/payment`
+- 결제 명령: `/payment-command`
+- 결제 조회: `/payment-query`
+- 알림: `/notification`
 
 ## 프로젝트 구조
 
 ```
-delivery/
+delivery-microservices-messaging/
 ├── .github/                # GitHub 관련 설정
 ├── apps/                   # 마이크로서비스 애플리케이션
 │   ├── gateway/            # API 게이트웨이 (포트: 3000)
 │   │   ├── src/            # 소스 코드
 │   │   │   ├── auth/       # 인증 관련 코드
+│   │   │   ├── health/     # 헬스 체크 관련 코드
 │   │   │   ├── order/      # 주문 관련 코드
 │   │   │   └── product/    # 상품 관련 코드
 │   │   └── Dockerfile      # Docker 빌드 설정
@@ -178,7 +184,11 @@ delivery/
 │   │   ├── src/            # 소스 코드
 │   │   │   └── order/      # 주문 관련 코드
 │   │   └── Dockerfile      # Docker 빌드 설정
-│   ├── payment/            # 결제 서비스
+│   ├── payment-command/    # 결제 명령 서비스
+│   │   ├── src/            # 소스 코드
+│   │   │   └── payment/    # 결제 관련 코드
+│   │   └── Dockerfile      # Docker 빌드 설정
+│   ├── payment-query/      # 결제 조회 서비스
 │   │   ├── src/            # 소스 코드
 │   │   │   └── payment/    # 결제 관련 코드
 │   │   └── Dockerfile      # Docker 빌드 설정
@@ -186,6 +196,14 @@ delivery/
 │       ├── src/            # 소스 코드
 │       │   └── notification/ # 알림 관련 코드
 │       └── Dockerfile      # Docker 빌드 설정
+├── envs/                   # 환경 변수 설정 파일
+│   ├── gateway/            # 게이트웨이 환경 변수
+│   ├── user/               # 사용자 서비스 환경 변수
+│   ├── product/            # 상품 서비스 환경 변수
+│   ├── order/              # 주문 서비스 환경 변수
+│   ├── payment-command/    # 결제 명령 서비스 환경 변수
+│   ├── payment-query/      # 결제 조회 서비스 환경 변수
+│   └── notification/       # 알림 서비스 환경 변수
 ├── docs/                   # 문서
 │   ├── auth-login-scripts.md # 인증 및 로그인 스크립트 문서
 │   ├── dockerhub_image_push.txt # Docker Hub 이미지 푸시 가이드

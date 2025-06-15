@@ -28,6 +28,11 @@ services:
     env_file:
       - ./apps/payment-command/prod.env
 
+  payment_query:
+    image: songminkyu/fc-nestjs-payment-query
+    env_file:
+      - ./apps/payment-query/prod.env
+
   notification:
     image: songminkyu/fc-nestjs-notification
     env_file:
