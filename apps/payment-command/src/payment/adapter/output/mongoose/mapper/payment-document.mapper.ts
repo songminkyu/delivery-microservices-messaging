@@ -1,8 +1,5 @@
 import { PaymentDocument } from '../document/payment.document';
 import { PaymentModel } from '../../../../domain/payment.domain';
-import { Prop } from '@nestjs/mongoose';
-import { PaymentStatus } from '../../../../../../../payment-query/src/payment/document/payment.document';
-
 export class PaymentDocumentMapper {
   constructor(private readonly document: PaymentDocument) {}
 

@@ -1,6 +1,5 @@
 import { DatabaseOutputPort } from '../../../port/output/database.output-port';
 import { PaymentModel } from '../../../domain/payment.domain';
-import { Promise } from 'mongoose';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PaymentEntity } from './entity/payment.entity';
 import { Repository } from 'typeorm';
